@@ -21,6 +21,8 @@
        Software.
 */
 
+#include <windows.h>
+#include <stdio.h>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -266,188 +268,226 @@ void renderButtons(SDL_Renderer* renderer, SDL_Rect cancelButton, SDL_Rect saveB
 
 int main(int argc, char* argv[]) {
 
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        return 1;
-    }
 
     if (!(IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) & (IMG_INIT_PNG | IMG_INIT_JPG))) {
         SDL_Quit();
         return 1;
     }
 
-    if (TTF_Init() == -1) {
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    // Create SDL window
-    SDL_Window* window = SDL_CreateWindow("Image Palette Remapper",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE);
-
-    if (!window) {
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    // Create renderer with VSync enabled
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!renderer) {
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-
-    int quit = 0;
-    SDL_Event e;
     SDL_Surface* imageSurface = NULL;
     SDL_Surface* paletteSurface = NULL;
-    SDL_Texture* texture = NULL;
     Color* palette = NULL;
     int paletteSize = 0;
+    if (argc == 4) {
 
-    while (!quit) {
-
-
-        // Prompt user to select input image
-        const char* fileTypes[] = {
-        "*.bmp", "*.gif", "*.jpeg", "*.jpg", "*.lbm", "*.pcx", "*.png",
-        "*.pnm", "*.ppm", "*.pgm", "*.pbm", "*.qoi", "*.tga", "*.xcf",
-        "*.xpm", "*.svg", "*.avif", "*.jxl", "*.tiff", "*.tif", "*.webp"
-        };
-
-        const char* inputImagePath = tinyfd_openFileDialog(
-            "Select Input Image",        // Dialog title
-            ".\\",                       // Default path
-            21,                          // Number of file filters
-            fileTypes,                   // File type filters
-            "Supported Image files",     // File type description
-            0                            // Single file selection
-        );
-
-        if (quit || !inputImagePath) {
-            quit = 1;
-            break;
+        if (SDL_Init(0) != 0) {
+            return 1;
         }
+
+        // Command line mode: use provided arguments
+        const char* inputImagePath = argv[1];
+        const char* paletteImagePath = argv[2];
+        const char* outputImagePath = argv[3];
+
         imageSurface = IMG_Load(inputImagePath);
-
-        // Prompt user to select palette image
-        const char* paletteImagePath = tinyfd_openFileDialog(
-            "Select Palette Image",      // Dialog title
-            ".\\",                       // Default path
-            21,                          // Number of file filters
-            fileTypes,                   // File type filters
-            "Supported Image files",     // File type description
-            0                            // Single file selection
-        );
-
-        if (!paletteImagePath) {
-            SDL_FreeSurface(imageSurface);
-            continue;
-        }
-
         paletteSurface = IMG_Load(paletteImagePath);
 
         if (!imageSurface || !paletteSurface) {
             if (imageSurface) SDL_FreeSurface(imageSurface);
             if (paletteSurface) SDL_FreeSurface(paletteSurface);
-            continue;
+            return 1;
         }
 
         loadPalette(paletteSurface, &palette, &paletteSize);
         if (palette == NULL) {
             SDL_FreeSurface(imageSurface);
             SDL_FreeSurface(paletteSurface);
-            continue;
+            return 1;
         }
 
         remapImageColors(imageSurface, palette, paletteSize);
 
-        if (texture) {
-            SDL_DestroyTexture(texture);
-        }
-        texture = SDL_CreateTextureFromSurface(renderer, imageSurface);
-
-        int windowWidth, windowHeight;
-        SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-
-        // Define button positions
-        int buttonWidth = 120;
-        int buttonHeight = 100;
-        int spacing = 20;
-        int margin = 20;
-
-        SDL_Rect cancelButton = { (windowWidth - 2 * buttonWidth - spacing) / 2, windowHeight - buttonHeight - margin, buttonWidth, buttonHeight };
-        SDL_Rect saveButton = { cancelButton.x + buttonWidth + spacing, windowHeight - buttonHeight - margin, buttonWidth, buttonHeight };
-
-        SDL_Texture* roundedRectTexture = IMG_LoadTexture(renderer, "./button_background.png");
-
-        if (!roundedRectTexture) {
-            free(palette);
-            SDL_FreeSurface(imageSurface);
-            SDL_FreeSurface(paletteSurface);
+        if (IMG_SavePNG(imageSurface, outputImagePath) != 0) {
             return 1;
         }
 
-        renderImage(renderer, texture, windowWidth, windowHeight);
-        renderButtons(renderer, cancelButton, saveButton, roundedRectTexture);
+        free(palette);
+        SDL_FreeSurface(imageSurface);
+        SDL_FreeSurface(paletteSurface);
 
-        while (SDL_PollEvent(&e) || !quit) {
-            if (e.type == SDL_QUIT) {
+    }
+    else {
+
+        if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+            return 1;
+        }
+
+        if (TTF_Init() == -1) {
+            IMG_Quit();
+            SDL_Quit();
+            return 1;
+        }
+
+        // Create SDL window
+        SDL_Window* window = SDL_CreateWindow("Image Palette Remapper",
+            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE);
+
+        if (!window) {
+            IMG_Quit();
+            SDL_Quit();
+            return 1;
+        }
+
+        // Create renderer with VSync enabled
+        SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        if (!renderer) {
+            SDL_DestroyWindow(window);
+            IMG_Quit();
+            SDL_Quit();
+            return 1;
+        }
+
+        int quit = 0;
+        SDL_Event e;
+        SDL_Texture* texture = NULL;
+
+        while (!quit) {
+
+
+            // Prompt user to select input image
+            const char* fileTypes[] = {
+            "*.bmp", "*.gif", "*.jpeg", "*.jpg", "*.lbm", "*.pcx", "*.png",
+            "*.pnm", "*.ppm", "*.pgm", "*.pbm", "*.qoi", "*.tga", "*.xcf",
+            "*.xpm", "*.svg", "*.avif", "*.jxl", "*.tiff", "*.tif", "*.webp"
+            };
+
+            const char* inputImagePath = tinyfd_openFileDialog(
+                "Select Input Image",        // Dialog title
+                ".\\",                       // Default path
+                21,                          // Number of file filters
+                fileTypes,                   // File type filters
+                "Supported Image files",     // File type description
+                0                            // Single file selection
+            );
+
+            if (quit || !inputImagePath) {
                 quit = 1;
                 break;
             }
-            else if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+            imageSurface = IMG_Load(inputImagePath);
 
-                cancelButton.x = (windowWidth - 2 * buttonWidth - spacing) / 2;
-                cancelButton.y = windowHeight - buttonHeight - margin;
+            // Prompt user to select palette image
+            const char* paletteImagePath = tinyfd_openFileDialog(
+                "Select Palette Image",      // Dialog title
+                ".\\",                       // Default path
+                21,                          // Number of file filters
+                fileTypes,                   // File type filters
+                "Supported Image files",     // File type description
+                0                            // Single file selection
+            );
 
-                saveButton.x = cancelButton.x + buttonWidth + spacing;
-                saveButton.y = windowHeight - buttonHeight - margin;
-
-                renderImage(renderer, texture, windowWidth, windowHeight);
-                renderButtons(renderer, cancelButton, saveButton, roundedRectTexture);
+            if (!paletteImagePath) {
+                SDL_FreeSurface(imageSurface);
+                continue;
             }
-            else if (e.type == SDL_MOUSEBUTTONDOWN) {
-                int x = e.button.x;
-                int y = e.button.y;
-                int radius = 10;
 
-                if (isPointInRoundedRect(x, y, cancelButton, radius)) {
+            paletteSurface = IMG_Load(paletteImagePath);
+
+            if (!imageSurface || !paletteSurface) {
+                if (imageSurface) SDL_FreeSurface(imageSurface);
+                if (paletteSurface) SDL_FreeSurface(paletteSurface);
+                continue;
+            }
+
+            loadPalette(paletteSurface, &palette, &paletteSize);
+            if (palette == NULL) {
+                SDL_FreeSurface(imageSurface);
+                SDL_FreeSurface(paletteSurface);
+                continue;
+            }
+
+            remapImageColors(imageSurface, palette, paletteSize);
+
+            if (texture) {
+                SDL_DestroyTexture(texture);
+            }
+            texture = SDL_CreateTextureFromSurface(renderer, imageSurface);
+
+            int windowWidth, windowHeight;
+            SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+            // Define button positions
+            int buttonWidth = 120;
+            int buttonHeight = 100;
+            int spacing = 20;
+            int margin = 20;
+
+            SDL_Rect cancelButton = { (windowWidth - 2 * buttonWidth - spacing) / 2, windowHeight - buttonHeight - margin, buttonWidth, buttonHeight };
+            SDL_Rect saveButton = { cancelButton.x + buttonWidth + spacing, windowHeight - buttonHeight - margin, buttonWidth, buttonHeight };
+
+            SDL_Texture* roundedRectTexture = IMG_LoadTexture(renderer, "./button_background.png");
+
+            if (!roundedRectTexture) {
+                free(palette);
+                SDL_FreeSurface(imageSurface);
+                SDL_FreeSurface(paletteSurface);
+                return 1;
+            }
+
+            renderImage(renderer, texture, windowWidth, windowHeight);
+            renderButtons(renderer, cancelButton, saveButton, roundedRectTexture);
+
+            while (SDL_PollEvent(&e) || !quit) {
+                if (e.type == SDL_QUIT) {
+                    quit = 1;
                     break;
                 }
-                else if (isPointInRoundedRect(x, y, saveButton, radius)) {
-                    const char* outputImagePath = tinyfd_saveFileDialog("Save Output Image", "untitled.png", 21, fileTypes, "Supported Image files");
-                    if (outputImagePath) {
-                        if (IMG_SavePNG(imageSurface, outputImagePath) != 0) {
-                            fprintf(stderr, "Error saving the image.\n");
-                        }
-                        else {
+                else if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+                    SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+                    cancelButton.x = (windowWidth - 2 * buttonWidth - spacing) / 2;
+                    cancelButton.y = windowHeight - buttonHeight - margin;
+
+                    saveButton.x = cancelButton.x + buttonWidth + spacing;
+                    saveButton.y = windowHeight - buttonHeight - margin;
+
+                    renderImage(renderer, texture, windowWidth, windowHeight);
+                    renderButtons(renderer, cancelButton, saveButton, roundedRectTexture);
+                }
+                else if (e.type == SDL_MOUSEBUTTONDOWN) {
+                    int x = e.button.x;
+                    int y = e.button.y;
+                    int radius = 10;
+
+                    if (isPointInRoundedRect(x, y, cancelButton, radius)) {
+                        break;
+                    }
+                    else if (isPointInRoundedRect(x, y, saveButton, radius)) {
+                        const char* outputImagePath = tinyfd_saveFileDialog("Save Output Image", "untitled.png", 21, fileTypes, "Supported Image files");
+                        if (outputImagePath && IMG_SavePNG(imageSurface, outputImagePath) == 0) {
                             quit = 1;
                         }
                     }
                 }
+                SDL_Delay(1);
             }
+            free(palette);
+            SDL_FreeSurface(imageSurface);
+            SDL_FreeSurface(paletteSurface);
+            texture = NULL;
             SDL_Delay(1);
         }
-        free(palette);
-        SDL_FreeSurface(imageSurface);
-        SDL_FreeSurface(paletteSurface);
-        texture = NULL;
-        SDL_Delay(1);
-    }
 
-    if (texture) {
-        SDL_DestroyTexture(texture);
+        if (texture) {
+            SDL_DestroyTexture(texture);
+        }
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        TTF_Quit();
     }
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 
-    return 0;
+
+    return 10;
 }
