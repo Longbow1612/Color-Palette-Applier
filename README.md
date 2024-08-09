@@ -6,6 +6,12 @@ Color Palette Applier is a lightweight C program designed to help you remap the 
 Color Remapping: Automatically replaces colors in your image with the closest matching colors from a provided palette.
 Supports Multiple Image Formats: Compatible with various image formats such as PNG, JPEG, BMP, GIF, and more.
 User-Friendly Interface: Simple graphical interface with options to select your input image, palette image, and save the output.
+### **Example Image**
+![example_image](https://github.com/user-attachments/assets/396c0125-652c-4724-8bab-dba9d592c070)
+![untitled](https://github.com/user-attachments/assets/37277d24-2693-4ea4-8c56-6d802a362e10)
+
+changed to 31 Color Palette
+
 ### **How to Use**
 
 Loading an Image: When you start the program, you will be prompted to select an image file that you wish to remap.
