@@ -2,7 +2,7 @@
     Copyright (c) 2024 Tim Friedrich
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the ìSoftwareî), to use,
+    of this software and associated documentation files (the ‚ÄúSoftware‚Äù), to use,
     copy, and modify the Software for personal and commercial purposes, subject to
     the following conditions:
 
@@ -311,8 +311,9 @@ int main(int argc, char* argv[]) {
     while (!quit) {
         // Prompt user to select input image
         const char* inputImagePath = tinyfd_openFileDialog("Select Input Image", "", 0, NULL, NULL, 0);
-        if (!inputImagePath) {
-            continue;
+        if (quit || !inputImagePath) {
+            quit = 1;
+            break;
         }
         imageSurface = IMG_Load(inputImagePath);
 
@@ -369,7 +370,7 @@ int main(int argc, char* argv[]) {
         renderImage(renderer, texture, windowWidth, windowHeight);
         renderButtons(renderer, cancelButton, saveButton, roundedRectTexture);
 
-        while (SDL_WaitEvent(&e)) {
+        while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 quit = 1;
                 break;
@@ -407,7 +408,9 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
-
+        if (quit) {
+            break;
+        }
         free(palette);
         SDL_FreeSurface(imageSurface);
         SDL_FreeSurface(paletteSurface);
