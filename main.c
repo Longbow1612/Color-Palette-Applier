@@ -309,8 +309,24 @@ int main(int argc, char* argv[]) {
     int paletteSize = 0;
 
     while (!quit) {
+
+
         // Prompt user to select input image
-        const char* inputImagePath = tinyfd_openFileDialog("Select Input Image", "", 0, NULL, NULL, 0);
+        const char* fileTypes[] = {
+        "*.bmp", "*.gif", "*.jpeg", "*.jpg", "*.lbm", "*.pcx", "*.png",
+        "*.pnm", "*.ppm", "*.pgm", "*.pbm", "*.qoi", "*.tga", "*.xcf",
+        "*.xpm", "*.svg", "*.avif", "*.jxl", "*.tiff", "*.tif", "*.webp"
+        };
+
+        const char* inputImagePath = tinyfd_openFileDialog(
+            "Select Input Image",        // Dialog title
+            ".\\",                       // Default path
+            21,                          // Number of file filters
+            fileTypes,                   // File type filters
+            "Supported Image files",     // File type description
+            0                            // Single file selection
+        );
+
         if (quit || !inputImagePath) {
             quit = 1;
             break;
@@ -318,7 +334,15 @@ int main(int argc, char* argv[]) {
         imageSurface = IMG_Load(inputImagePath);
 
         // Prompt user to select palette image
-        const char* paletteImagePath = tinyfd_openFileDialog("Select Palette Image", "", 0, NULL, NULL, 0);
+        const char* paletteImagePath = tinyfd_openFileDialog(
+            "Select Palette Image",      // Dialog title
+            ".\\",                       // Default path
+            21,                          // Number of file filters
+            fileTypes,                   // File type filters
+            "Supported Image files",     // File type description
+            0                            // Single file selection
+        );
+
         if (!paletteImagePath) {
             SDL_FreeSurface(imageSurface);
             continue;
@@ -370,7 +394,7 @@ int main(int argc, char* argv[]) {
         renderImage(renderer, texture, windowWidth, windowHeight);
         renderButtons(renderer, cancelButton, saveButton, roundedRectTexture);
 
-        while (SDL_PollEvent(&e)) {
+        while (SDL_PollEvent(&e) || !quit) {
             if (e.type == SDL_QUIT) {
                 quit = 1;
                 break;
@@ -396,7 +420,7 @@ int main(int argc, char* argv[]) {
                     break;
                 }
                 else if (isPointInRoundedRect(x, y, saveButton, radius)) {
-                    const char* outputImagePath = tinyfd_saveFileDialog("Save Output Image", "output.png", 0, NULL, NULL);
+                    const char* outputImagePath = tinyfd_saveFileDialog("Save Output Image", "untitled.png", 21, fileTypes, "Supported Image files");
                     if (outputImagePath) {
                         if (IMG_SavePNG(imageSurface, outputImagePath) != 0) {
                             fprintf(stderr, "Error saving the image.\n");
@@ -407,14 +431,13 @@ int main(int argc, char* argv[]) {
                     }
                 }
             }
-        }
-        if (quit) {
-            break;
+            SDL_Delay(1);
         }
         free(palette);
         SDL_FreeSurface(imageSurface);
         SDL_FreeSurface(paletteSurface);
         texture = NULL;
+        SDL_Delay(1);
     }
 
     if (texture) {
