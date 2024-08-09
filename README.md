@@ -7,8 +7,8 @@ Color Remapping: Automatically replaces colors in your image with the closest ma
 Supports Multiple Image Formats: Compatible with various image formats such as PNG, JPEG, BMP, GIF, and more.
 User-Friendly Interface: Simple graphical interface with options to select your input image, palette image, and save the output.
 ### **Example Image**
-![example_image](https://github.com/user-attachments/assets/396c0125-652c-4724-8bab-dba9d592c070)
-![untitled](https://github.com/user-attachments/assets/37277d24-2693-4ea4-8c56-6d802a362e10)
+![example_image](https://github.com/user-attachments/assets/ed19cca7-e3a1-4764-bfc2-e7fa20ef05c5)
+![untitled](https://github.com/user-attachments/assets/5b88dbe1-9f72-4d24-8a7e-d19dadfcfd68)
 
 changed to 31 Color Palette
 
